@@ -10,15 +10,26 @@ interface IVeiculo {
   const $ = (query: string): HTMLInputElement | null =>
     document.querySelector(query);
 
-  // função / funções principal
+  // função / funções principais
   function patio() {
-    function ler() {}
+    // lendo os dados no localstorage
+    // ler() : tipo de dado retornado
+    function ler(): IVeiculo[] {
+      // vendo se existe algum dado no localstorage
+      return localStorage.patio ? JSON.parse(localStorage.patio) : [];
+    }
+
+    // salva os dados no localstorage
+    function salvar(veiculos: IVeiculo[]) {
+      localStorage.setItem("patio", JSON.stringify(veiculos));
+    }
+
     // add um novo carro ao estacionamento
-    function adicionar(veiculo: IVeiculo) {
+    function adicionar(veiculo: IVeiculo, salva?: boolean) {
       // pegamos o começo da tabela
       const row = document.createElement("tr");
 
-      // aqui colocamos o que queremos ter na nossa tabela 
+      // aqui colocamos o que queremos ter na nossa tabela
       row.innerHTML = `
       <td>${veiculo.nome}</td>
       <td>${veiculo.placa}</td>
@@ -30,13 +41,30 @@ interface IVeiculo {
 
       // colocamos nossa row na tabela
       $("#patio")?.appendChild(row);
+
+      // só serão salvas no localstorage os novos veiculos, isso serve para não duplicarmos os dados
+      // a prop salva é boolean (V ou F), ela só será TRUE quando add um novo veiculo 
+      if (salva) salvar([...ler(), veiculo]);
     }
+
     function remover() {}
-    function salvar() {}
-    function render() {}
+
+    function render() {
+      // ! = forçar o código a pegar o elemento (obrigatório)
+      $("#patio")!.innerHTML = "";
+      const patio = ler();
+
+      if (patio.length) {
+        patio.forEach((veiculo) => {
+          adicionar(veiculo);
+        });
+      }
+    }
 
     return { ler, adicionar, remover, salvar, render };
   }
+
+  patio().render();
 
   // temos o ? abaixo pois o elemento pode ser nulo, com isso o ? deixa ele como não obrigatório
   $("#cadastrar")?.addEventListener("click", () => {
@@ -51,6 +79,6 @@ interface IVeiculo {
       return;
     }
 
-    patio().adicionar({ nome, placa, entrada: new Date() });
+    patio().adicionar({ nome, placa, entrada: new Date() }, true);
   });
 })();
