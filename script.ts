@@ -2,13 +2,21 @@
 interface IVeiculo {
   nome: string;
   placa: string;
-  entrada: Date;
+  entrada: Date | string;
 }
 
 // Função anon invocada imediatamente
 (function () {
   const $ = (query: string): HTMLInputElement | null =>
     document.querySelector(query);
+
+  // calcula o tempo que o veiculo ficou no estacionamento
+  function calcTempo(mil: number) {
+    const min = Math.floor(mil / 60000);
+    const sec = Math.floor((mil % 60000) / 1000);
+
+    return `${min}m e ${sec}s`;
+  }
 
   // função / funções principais
   function patio() {
@@ -39,15 +47,36 @@ interface IVeiculo {
       </td>
       `;
 
+      row.querySelector(".delete")?.addEventListener("click", function () {
+        remover(this.dataset.placa);
+      });
+
       // colocamos nossa row na tabela
       $("#patio")?.appendChild(row);
 
       // só serão salvas no localstorage os novos veiculos, isso serve para não duplicarmos os dados
-      // a prop salva é boolean (V ou F), ela só será TRUE quando add um novo veiculo 
+      // a prop salva é boolean (V ou F), ela só será TRUE quando add um novo veiculo
       if (salva) salvar([...ler(), veiculo]);
     }
 
-    function remover() {}
+    // remove os carros do estacionamento
+    function remover(placa: string) {
+      const { entrada, nome } = ler().find(
+        (veiculo) => veiculo.placa === placa
+      );
+
+      const tempo = calcTempo(
+        new Date().getTime() - new Date(entrada).getTime()
+      );
+
+      if (
+        !confirm(`O veiculo ${nome} permaneceu por ${tempo}, deseja encerrar?`)
+      )
+        return;
+
+      salvar(ler().filter((veiculo) => veiculo.placa !== placa));
+      render();
+    }
 
     function render() {
       // ! = forçar o código a pegar o elemento (obrigatório)
@@ -79,6 +108,6 @@ interface IVeiculo {
       return;
     }
 
-    patio().adicionar({ nome, placa, entrada: new Date() }, true);
+    patio().adicionar({ nome, placa, entrada: new Date().toISOString() }, true);
   });
 })();
